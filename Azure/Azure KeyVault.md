@@ -70,3 +70,41 @@ Confidencialidad directa total (PFS) protege las conexiones entre los sistemas c
 + Registro: asegúrese de activar el reigstro y las alertas.
 
 + Opciones de recuperación: active la *eliminación temporal* y la protección de purga si desea protegerse contra la eliminación forzada del secreto.
+
+## Autenticación en Azure Key Vault
+
+La autenticación funciona junto con Microsoft Entra, que es responsable de autenticar la identidda de cualquier entidad de seguridad determinada.
+
+En el caso de las aplicaciones, hay dos maneras de obtener una entidad de servicio:
+
++ Habilite una __identidad administrada__ asignada por el sistema para la aplicación. Azure Administra internamente la entidad de ervicio de la aplicación y autentica la aplicación con otros servicios de Azure. 
+
++ Si no puede usar la identidad administrada, registra la aplicación con su inquilino en Microsoft Entra. El registro también crea un segundo objeto de aplicación que identifica la aplicación en todos los inquilinos. 
+
+        Se recomienda usar una identidad administrada asignada por el sistema.
+
+### Autenticación en Key Vault en el código de la aplicación
+
+El SDK de Key Vault usa la biblioteca cliente de identidad de Azure, que permite la autenticación sin problemas en Key Vault en entornos con el mismo código.
+
+|.NET|Python|Java|JavaScript|
+|----|------|----|----------|
+|[SDK .NET de Azure Identity](https://learn.microsoft.com/es-es/dotnet/api/overview/azure/identity-readme)|[SDK Python de Azure Identity](https://learn.microsoft.com/es-es/python/api/overview/azure/identity-readme)|[SDK Java de Azure Identity](https://learn.microsoft.com/es-es/java/api/overview/azure/identity-readme)|[SDK JavaScript de Azure Identity](https://learn.microsoft.com/es-es/javascript/api/overview/azure/identity-readme)|
+
+### Autenticación en Key Vault con REST
+
+Los tokens de acceso deben enviarse al servicio mediante encabezado de autorización HTTP:
+
+        PUT /keys/MYKEY?api-version=<api_version>  HTTP/1.1  
+        Authorization: Bearer <access_token>
+
+Cuando no se proporciona un token de acceso o cuando el servicio no acepta un token, se devuelve el error HTTP 401 al cliente, que incluirá el encabezado *WWW-Authenticate*:
+
+        401 Not Authorized  
+        WWW-Authenticate: Bearer authorization="…", resource="…"
+
+Los parámetros del encabezado *WWW-Autenticate* son los siguientes:
+
++ authorization: la dirección del servicio de autorización de OAuth2 que puede utilizarse para obtener un token de acceso para la solicitud.
+
++ resource: Nombre del recurso (*https://vault.azure.net*) que se va a utilizar en la solicitud de autorización.
