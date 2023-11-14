@@ -45,7 +45,7 @@ Azure App Configuration almacena los datos de configuración como pares clave-va
 
 Las claves sirven como nombre de los pares clave-valor y se usan para almacenar y recuperar los valores correspondientes. Es una práctica habitual la organización de las claves en un espacio de nombres jerárquico mediante un delimitador de caracteres como / o :. 
 
-Las claves almacenadas en App Configuration distinguen entre mayúsculas y minúsculas y son cadenas basadas en Unicode, excepto los caráceteres reservados ('*', ',' y '\'). Si tiene que usar un carácter reservado, deberá especificar un carácter de escape con \{Reserved Character}.
+Las claves almacenadas en App Configuration distinguen entre mayúsculas y minúsculas y son cadenas basadas en Unicode, excepto los caráceteres reservados (`*`, `,` y `\`). Si tiene que usar un carácter reservado, deberá especificar un carácter de escape con `\{Reserved Character}`.
 
 Hay un límite de tamaño combinado de diez mil caracteres en un par clave-valor
 
@@ -162,3 +162,61 @@ El administrador de la característica admite appsettings.json como origen de co
 Para usar marcas de características de forma eficaz, debe externalizar todas las marcas de características usadas en una aplicación. Ese enfoque le permite cambiar los estados de las marcas de características sin modificar y volver a implementar la propia aplicación.
 
 Azure App Configuration está diseñado para ser un repositorio centralizado para las marcas de características. Puede usarla para definir distintos tipos de marcas de características y manipular sus estados con rapidez y confianza. Luego, puede usar las bibliotecas de App Configuration con diversos marcos de lenguajes de programación para acceder fácilmente a estas marcas de características desde su aplicación.
+
+## Protección de los datos de configuración de aplicaciones
+
+### Cifrado de datos de configuración mediante claves administradas por el cliente
+
+Azure App Configuration cifra la información confidencial en reposo mediante una clave de cifrado AES de 256 bits proporcionada por Microsoft. Cada instancia de App Configuration tiene su propia clave de cifrado que administra el servicio y que se usa para cifrar la información confidencial. La información confidencial incluye los valores que se encuentran en los pares clave-valor. Cuando está habilitada la funcionalidad de claves administradas por el cliente, App Configuration usa una identidad administrada asignada a la instancia de App Configuration para autenticarse con Microsoft Entra ID. Luego, la identidad administrada llama a Azure Key Vault y encapsula la clave de cifrado de la instancia de App Configuration. La clave de cifrado encapsulada se almacena y la clave de cifrado desencapsulada se almacena en caché en App Configuration durante una hora. App Configuration actualiza la versión desencapsulada de la clave de cifrado de la instancia de App Configuration cada hora. De esta forma, se garantiza la disponibilidad en condiciones de funcionamiento normales.
+
+#### Habilitación de la funcionalidad de clave administrada por el cliente
+
+Los componentes siguientes son necesarios para habilitar correctamente la funcionalidad de clave administrada por el cliente en Azure App Configuration:
+
++ Instancia de Azure App Configuration de nivel estándar.
++ Azure Key Vault con las características de eliminación temporal y protección de purga habilitadas.
++ Una clave RSA o RSA-HSM dentro de Key Vault: la clave no debe haber expirado, debe estar habilitada y debe tener habilitadas las funcionalidades de encapsular y desencapsular.
+
+Una vez configurados estos recursos, quedan dos pasos para permitir que Azure App Configuration use la clave de Key Vault:
+
++ Asignación de una identidad administrada a la instancia de Azure App Configuration.
++ Conceda los permisos `GET`, `WRAP` y `UNWRAP` en la directiva de acceso de Key Vault de destino.
+
+### Uso de puntos de conexión privados para Azure App Configuration
+
+El punto de conexión privado usa una dirección IP del espacio de direcciones de la red virtual para el almacén de App Configuration. El tráfico de red entre los clientes de la red virtual y la cuenta de App Configuration atraviesa la red virtual usando un vínculo privado en la red troncal de Microsoft, lo que elimina la exposición a la red pública de Internet.
+
++ Proteger los detalles de configuración de la aplicación mediante la configuración del firewall para bloquear todas las conexiones a App Configuration en el punto de conexión público.
++ Aumentar la seguridad de la red virtual, lo que garantiza que los datos no escapen de ella.
++ Conectarse de forma segura al almacén de App Configuration desde las redes locales que se conectan a la red virtual mediante VPN o ExpressRoute con emparejamiento privado.
+
+#### Identidades administradas
+
+Una identidad administrada de Microsoft Entra ID permite a Azure App Configuration acceder fácilmente a otros recursos protegidos por Microsoft Entra ID, como Azure Key Vault. La plataforma de Azure administra la identidad. No es necesario que aprovisione ni rote ningún secreto.
+
+La aplicación puede tener dos tipos de identidades:
+
++ Una identidad asignada por el sistema está asociada al almacén de configuración. Se elimina si se elimina el almacén de configuración. Un almacén de configuración solo puede tener una identidad asignada por el sistema.
++ Una identidad asignada por el usuario es un recurso de Azure independiente que se puede asignar al almacén de configuración. Un almacén de configuración puede tener varias identidades asignadas por el usuario.
+
+#### Adiciónde una identidad asignada por el sistema
+
+Para configurar una identidad administrada mediante la CLI de Azure, use el comando `az appconfig identity assign` en un almacén de configuración existente.
+
+        az appconfig identity assign \ 
+            --name myTestAppConfigStore \ 
+            --resource-group myResourceGroup
+
+#### Adición de una identidad asignada por el usuario
+
+La creación de un almacén de App Configuration con una identidad asignada por el usuario requiere que se cree la identidad y luego se asigne su identificador de recurso al almacén.
+
+Cree una identidad mediante el comando `az identity create`:
+
+        az identity create --resource-group myResourceGroup --name myUserAssignedIdentity
+
+Asigne la nueva identidad asignada por el usuario al almacén de configuración `myTestAppConfigStore`:
+
+        az appconfig identity assign --name myTestAppConfigStore \ 
+            --resource-group myResourceGroup \ 
+            --identities /subscriptions/[subscription id]/resourcegroups/myResourceGroup/providers/Microsoft.ManagedIdentity/userAssignedIdentities/myUserAssignedIdentity
