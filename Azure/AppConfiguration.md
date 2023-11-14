@@ -92,3 +92,73 @@ Cada valor de clave se identifica por su clave más una etiqueta que puede ser n
 Los valores asignados a las claves también son cadenas unicode. Hay un tipo de contenido opcional definido por el usuario que se asocia a cada valor. Utilice este atributo para almacenar información.
 
 Los datos de configuración que se encuentran en un almacén de App Configuration, entre los que se incluyen todas las claves y los valores, se cifran tanto en reposo como en tránsito. App Configuration no es una solución de reemplazo para Azure Key Vault. No almacene secretos de aplicación en ella.
+
+## Administración de características de la aplicación
+
+La administración de características es una práctica moderna de desarrollo de software que separa el lanzamiento de las características de la implementación del código y permite hacer cambios rápidos relacionados con la disponibilidad de las características a petición. Usa una técnica denominada marcas de características (también conocida como activación/desactivación de funcionalidad o modificador de características, entre otros) para administrar el ciclo de vida de una característica dinámicamente.
+
+### Conceptos básicos
+
++ __Marca de característica__: una marca de características es una variable con un estado binario de activado o desactivado. La marca de características también tiene un bloque de código asociado. El estado de la marca de características se desencadena tanto si el bloque de código se ejecuta como si no.
+
++ __Administrador de características__: un administrador de características es un paquete de aplicación que controla el ciclo de vida de todas las marcas de características de una aplicación. Normalmente, el administrador de características proporciona funcionalidad adicional, como el almacenamiento en caché de las marcas de características y la actualización de sus estados.
+
++ __Filtro__: Un filtro es una regla para evaluar el estado de una marca de características. Un grupo de usuarios, un tipo de explorador o dispositivo, una ubicación geográfica y un período de tiempo son todos ellos ejemplos de lo que puede representar un filtro.
+
+Una implementación eficaz de la administración de características consta de al menos dos componentes que funcionan conjuntamente:
+
++ Una aplicación que hace uso de las marcas de características.
++ Un repositorio independiente que almacena las marcas de características y sus estados actuales.
+
+### Uso de la marca de características en el código
+
+El patrón básico para implementar las marcas de características en una aplicación es sencillo. Puede considerar una marca de características como una variable de estado booleana usada con una declaración condicional if en su código:
+
+        if (featureFlag) {
+           // Run the following code
+        }
+
+Si featureFlag está establecido en True, se ejecuta el bloque de código incluido; en caso contrario, se omite. Puede establecer el valor de featureFlag estáticamente, como se muestra en el ejemplo de código siguiente:
+
+        bool featureFlag = true;
+
+También puede evaluar el estado de la marca según ciertas reglas:
+
+        bool featureFlag = isBetaUser();
+
+Un patrón de marca de características un poco más complicado incluye también una instrucción else:
+
+        if (featureFlag) {
+            // This following code will run if the featureFlag value is true
+        } else {
+            // This following code will run if the featureFlag value is false
+        }
+
+### Declaración de la marca de características
+
+Cada marca de características tiene dos partes: un nombre y una lista de uno o varios filtros que se utilizan para evaluar si el estado de la característica está activo. Un filtro define un caso de uso en el que debe activarse una característica.
+
+Cuando una marca de características tiene varios filtros, la lista de filtros se recorre en orden hasta que uno de los filtros determina que se debe habilitar la característica. En ese momento, la marca de característica está activa y se omiten los resultados del filtro restantes. Si ningún filtro indica que se debe habilitar la característica, la marca de características está desactivada.
+
+El administrador de la característica admite appsettings.json como origen de configuración para las marcas de características. El ejemplo siguiente muestra cómo establecer las marcas de características en un archivo JSON:
+
+        "FeatureManagement": {
+            "FeatureA": true, // Feature flag set to on
+            "FeatureB": false, // Feature flag set to off
+            "FeatureC": {
+                "EnabledFor": [
+                    {
+                        "Name": "Percentage",
+                        "Parameters": {
+                            "Value": 50
+                        }
+                    }
+                ]
+            }
+        }
+
+### Repositorio de marcas de características
+
+Para usar marcas de características de forma eficaz, debe externalizar todas las marcas de características usadas en una aplicación. Ese enfoque le permite cambiar los estados de las marcas de características sin modificar y volver a implementar la propia aplicación.
+
+Azure App Configuration está diseñado para ser un repositorio centralizado para las marcas de características. Puede usarla para definir distintos tipos de marcas de características y manipular sus estados con rapidez y confianza. Luego, puede usar las bibliotecas de App Configuration con diversos marcos de lenguajes de programación para acceder fácilmente a estas marcas de características desde su aplicación.
