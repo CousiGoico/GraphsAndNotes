@@ -140,3 +140,49 @@ Con la información del registro agregada, las credenciales guardadas se pueden 
 
 + __Contenedores con privilegios__: Azure Container Apps no puede ejecutar contenedores con privilegios. Si el programa intenta ejecutar un proceso que requiere acceso raíz, la aplicación dentro del contenedor experimenta un error en tiempo de ejecución.
 + __Sistema operativo__: se necesitan imágenes de contenedor basadas en Linux (`linux/amd64`).
+
+## Implementación de la autenticación y autorización en Azure Container Apps
+
+Proporciona características integradas de autenticación y autorización para proteger la aplicación de contenedor con una cantidad mímima de código. Permite ahorrar tiempo y esfuerzo, ya que proporciona autenticación con proveedores de identidades federados.
+
++ Proporciona acceso a diversos proveedores de autenticación integrados.
++ Las características de autenticación integradas no requiere idioma, SDK, experiencia en seguridad ni ningún código que escribir.
+
+Solo se debe usar con HTTPS. El atributo `allowInsecure` debe estar deshabilitado en la configuración de entrada de la aplicación de contenedor. Se puede configurar la autenticación con o sin restringir el acceso al contenido.
+
++ Use la opción *Restringir acceso* en __Requerir autenticación__ para que sólo puedan acceder los usuarios autenticados.
++ Use el valor *Restringir acceso* en __Permitir acceso no autenticado__ para realizar la autenticación sin restringir el acceso. 
+
+### Proveedores de identidades
+
+|Proveedor|Punto de contexión de inicio de sesión|Guía de procedimientos|
+|---------|--------------------------------------|----------------------|
+|Plataforma de identidad de Microsoft|`/.auth/login/aad`|[Plataforma de identidad de Microsoft](https://learn.microsoft.com/es-es/azure/container-apps/authentication-azure-active-directory)|
+Facebook|`/.auth/login/facebook`|[Facebook](https://learn.microsoft.com/es-es/azure/container-apps/authentication-facebook)|
+GitHub|`/.auth/login/github`|[GitHub](https://learn.microsoft.com/es-es/azure/container-apps/authentication-github)|
+Google|`/.auth/login/google`|[Google](https://learn.microsoft.com/es-es/azure/container-apps/authentication-google)|
+Twitter|`/.auth/login/twitter`|[Twitter](https://learn.microsoft.com/es-es/azure/container-apps/authentication-twitter)|
+Nuevo proveedor de OpenID Connect|`/.auth/login/<providername>`|[OpenID Connect](https://learn.microsoft.com/es-es/azure/container-apps/authentication-openid)
+
+El punto de conexión de inicio de sesión está disponible para la autenticación de los usuarios y para la validación de tokens de autenticación del proveedor.
+
+### Arquitectura de características
+
+El middleware de autenticación y autorización es una característica que se ejecuta como contenedor sidecar en cada réplica de la aplicación. Cada solicitud HTTP entrante pasa por el nivel de seguridad antes de que la aplicación lo controle.
+
+![](https://learn.microsoft.com/es-es/training/wwl-azure/implement-azure-container-apps/media/container-apps-authorization-architecture.png)
+
+El middleware controla:
+
++ Autentica usuarios y clientes con los proveedores de identidades específicados.
++ Administra la sesión autenticada.
++ Inserta información de identidad en encabezados de solicitud HTTP. 
+
+El módulo de autenticación y autorización se ejecuta en un contenedor independiente, aislado del código de la aplicación. La información pertinente que necesita la aplicación se proporciona en encabezados de solicitud.
+
+### Flujode autenticación
+
+El flujo es el mismo para todos los proveedores, pero varía en función de si desea iniciar sesión con el SDK del proveedor:
+
++ __Sin el SDK del proveedor__: la aplicación delega el inicio de sesión federado a Conainer Apps. 
++ __Con el SDK del proveedor__:  la aplicación inicia manualmente la sesión del usuario en el proveedor y, luego, envía el token de autenticación a Container Apps para la validación.
