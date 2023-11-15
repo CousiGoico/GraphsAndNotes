@@ -119,3 +119,23 @@ Existen tres tipos de pruebas de disponibilidad:
 
 > __IMPORTANTE: La prueba de ping de direcciones URL se basa en la infraestructura DNS de la red pública de Internet para resolver los nombres de dominio de los puntos de conexión probados. Si usa DNS privado, debe asegurarse de que los servidores de nombres de dominio públicos puedan resolver todos los nombres de dominio de la prueba. Cuando esto no sea posible, puede usar pruebas TrackAvailability personalizadas en su lugar.__
 
+## Solución de pblemas de rendimiento de aplicaciones mediante el Mapa de aplicación
+
+El mapa de aplicación le ayuda a detectar los cuellos de botella en el rendimiento o las zonas activas con error en todos los componentes de la aplicación distribuida. Cada nodo del mapa representa un componente de aplicación o sus dependencias, e incluye el KPI de mantenimiento y el estado de alerta.
+
++ Los componentes son diferentes de las dependencias externas "observadas", como SQL, Event Hubs y otras, a las que su equipo u organización no pueden acceder (código o telemetría).
++ Los componentes se ejecutan en cualquier número de instancias de rol, servidor o contenedor.
++ Los componentes pueden ser claves de instrumentación de Application Insights independientes o diferentes roles que informan a una única clave de instrumentación de Application Insights. La experiencia de mapa de vista preliminar muestra los componentes independientemente de cómo se configuren.
+
+Puede ver la topología de aplicación completa a lo largo de varios niveles de componentes de aplicación relacionados. Los componentes podrían ser diferentes recursos de Application Insights o distintos roles de un único recurso.
+
+Si todos los componentes son roles dentro de un único recurso de Application Insights, este paso de detección no es necesario. 
+
+![](https://learn.microsoft.com/es-es/training/wwl-azure/monitor-app-performance/media/application-map.png)
+
+Uno de los objetivos principales de la experiencia es poder visualizar topologías complejas con cientos de componentes. Haga clic en cada componente para ver información detallada relacionada e ir a la experiencia de evaluación de prioridades de rendimiento y errores de ese componente.
+
+![](https://learn.microsoft.com/es-es/training/wwl-azure/monitor-app-performance/media/application-map-component.png)
+
+El mapa de aplicación usa la propiedad nombre de rol en la nube para identificar los componentes en el mapa. Puede establecer o invalidar manualmente el nombre del rol en la nube y cambiar lo que se muestra en el Mapa de aplicación.
+
