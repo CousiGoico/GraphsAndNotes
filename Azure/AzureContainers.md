@@ -186,3 +186,75 @@ El flujo es el mismo para todos los proveedores, pero varía en función de si d
 
 + __Sin el SDK del proveedor__: la aplicación delega el inicio de sesión federado a Conainer Apps. 
 + __Con el SDK del proveedor__:  la aplicación inicia manualmente la sesión del usuario en el proveedor y, luego, envía el token de autenticación a Container Apps para la validación.
+
+## Administración de revisiones y secretos en Azure Container Apps
+
+Implementa el control de versiones de aplicaciones de contenedor mediantel a creación de revisiones. Una revisión es una instantánea inmutable de una versión de la aplicación de contenedor. Los cambios en una aplicación de contenedor se dividen en dos categorias:
+
++ Ámbito de la revisión: activan una nueva revisión cuando se implementa la aplicación.
++ Ámbito de la aplicación: cualquier cambio en los parámetros de la sección [*propties.configuration*](https://learn.microsoft.com/es-es/azure/container-apps/azure-resource-manager-api-spec?tabs=arm-template#propertiesconfiguration).
+
+Puede controlar qué revisiones están activas y el tráfico externo que se dirige a cada revisión activa. Los nombres de revisión se usan para identificar una revisión, y en la URL de la revisión.
+
+Container Apps crea un nombre de revisión único con un sufijo que consiste en una cadena semialeatoria de caraceres alfanuméricos. Por ejemplo, para una aplicación contenedor llamada *album-api*, si se establece el nombre del sufijo de revisión como *1st-revision*, se creará una revisión con el nombre *album-api--1st-revision*. Puedes establecer el sufijo de revisión en la plantilla ARM, mediante los comandos `az containerapp create` y `az containerapp update`.
+
+### Actualización de la aplicación de contenedor
+
+Con el comando `az containerapp update` puedes modificar varaibles de entorno, recursos de proceso, parámetros de escalado e implementar otra imagen. 
+
+        az containerapp update \
+        --name <APPLICATION_NAME> \
+        --resource-group <RESOURCE_GROUP_NAME> \
+        --image <IMAGE_NAME>
+
+Para listar todas las revisiones use el comando `az containerapp revision list`.
+
+        az containerapp revision list \
+        --name <APPLICATION_NAME> \
+        --resource-group <RESOURCE_GROUP_NAME> \
+        -o table
+
+### Administración de secretos en Azure Container Apps
+
+Azure Container Apps permite que la aplicación almacene de forma segura valores de configuración confidenciles. Si los secretos se definen a nivel de aplicación, los valores protegidos estarán disponibles para las aplicaciones contenedoreas. Podrá hacer referencia a valores protegidos dentro de las reglas de escalado. 
+
++ Los secretos están limitados a una aplicación, fuera de cualquier revisión específicada de una aplicación.
++ Agregar, quitar o cambiar secretos no genera nuevas revisiones.
++ Cada revisión de aplicación puede hacer referencia a uno o varios secretos.
++ Varias revisiones pueden hacer referencia a los mismos secretos. 
+
+Cuando un secreto es actualizado o eliminado no afecta automáticamente a las revisiones existentes de la aplicación, puede responder a los cambios de las siguientes maneras:
+
++ Implementación de una nueva revisión. 
++ Reinicio de una revisión existente. 
+
+Antes de eliminar un secreto, implemente una nueva revisión que ya no haga referencia al secreto anterior. Posteriormente, desactive toas las revisiones que hacen referencia al mismo. 
+
+> __NOTA: Container Apps no admite la integración de Azure Key Vault. Pero puede habilitar la identidad administrada en la aplicación contenedora y suar el SDK de Key Vault en la aplicación para acceder a los secretos.__
+
+### Definición de secretos
+
+Cuando cree una aplicación de contenedor, los secretos se definen mediante el parámetro `--secrets`.
+
++ El parámetro acepta un conjunto deliminado por espacios de pares nombre-valor.
++ Cada par está delmitado por el signo igual `(=)`.
+
+Declaración de una cadena de conexión en una cuenta de Queue Storage en el parámetro `--secrets`. El valor de queue-connection-string procede de una variable de entorno denominada `$CONNECTION_STRING`.
+
+        az containerapp create \
+        --resource-group "my-resource-group" \
+        --name queuereader \
+        --environment "my-environment-name" \
+        --image demos/queuereader:v1 \
+        --secrets "queue-connection-string=$CONNECTION_STRING"
+
+Una vez declarados los secretos en el nivel de aplicación, puede hacer referencia a ellos en variables de entorno al crear una revisión en la aplicación de contenedor. Cuando una variable de entorno hace referencia a un secreto, su valor se rellena con el valor definidio en el secreto. Para hacer referencia a un secreto en una avariable de entorno de la CLI de Azure, establezca su valor en `secretref:`, seguido del nombre del secreto. 
+
+        az containerapp create \
+        --resource-group "my-resource-group" \
+        --name myQueueApp \
+        --environment "my-environment-name" \
+        --image demos/myQueueApp:v1 \
+        --secrets "queue-connection-string=$CONNECTIONSTRING" \
+        --env-vars "QueueName=myqueue" "ConnectionString=secretref:queue-connection-string"
+
