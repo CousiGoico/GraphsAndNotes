@@ -258,3 +258,58 @@ Una vez declarados los secretos en el nivel de aplicación, puede hacer referenc
         --secrets "queue-connection-string=$CONNECTIONSTRING" \
         --env-vars "QueueName=myqueue" "ConnectionString=secretref:queue-connection-string"
 
+### Exploración de la integración de Dapr con Azure Container Apps
+
+Distributed Application Runtime (Dapr) es un conjunto de características qeu se pueden adoptar de forma incremental, que simplifican la creacon de aplicaciones distribuidas basadas en microservicios. Proporciona funcionalidades para hablitar la intercomunicaicones de aplicaciones medinate la mensajería a través de pub/sub o llamadas de servicio a servicio configurables y seguras. 
+
+Es un proyecto de código abierto de __Cloud Native Computing Foundation (CNCF)__. La fundación forma parte de Linux Foundation y proporciona soporte, supervisión y dirección para proyectos nativos de rápido crecimiento en la nube. Como alternativa, la plataforma Container Apps ofrece lo siguiente:
+
++ Proporciona una integración de Dapr adminsitrada y compatible.
++ Controla las actualizaciones de versiones de Dapr sin problemas.
++ Expone un modelo de interacción de Dapr simplificado para aumentar la productividad del desarrollador. 
+
+### API de Dapr
+
+![](https://learn.microsoft.com/es-es/training/wwl-azure/implement-azure-container-apps/media/azure-container-apps-distributed-application-runtime-building-blocks.png)
+
+|API de Dapr|Desciprción|
+|-----------|-----------|
+|[Invocación de servicio a servicio](https://docs.dapr.io/developing-applications/building-blocks/service-invocation/service-invocation-overview/)|Descrubra los servicios y realice llamadas de servicio a servicio confiables y directas con autenticación y cifrado automáticos de mTLS.|
+|[Administración de estados](https://docs.dapr.io/developing-applications/building-blocks/state-management/state-management-overview/)|Proporciona funcionalidades de administración de estado para transacciones y operaciones CRUD.|
+|[Pub/Sub](https://docs.dapr.io/developing-applications/building-blocks/pubsub/pubsub-overview)|Permite que las aplicaciones de contenedor de plublicadores y suscriptores se comuniquen entre ellos a través de un agente de mensajes intermediario.|
+|[Enlaces](https://docs.dapr.io/developing-applications/building-blocks/bindings/bindings-overview/)|Desencadene las aplicaciones en función de eventos.|
+|[Actores](https://docs.dapr.io/developing-applications/building-blocks/actors/actors-overview/)|Son unidades de trabajo orientadas a mensajes, de un solo subproceso y diseñadas para escalar rápidamente. Como en situaciones de carga de trabajo en ráfaga intensivas.|
+|[Observabilidad](https://learn.microsoft.com/es-es/azure/container-apps/observability)|Envíe información de seguimiento a un back-end de Application Insights.|
+|[Secretos](https://docs.dapr.io/developing-applications/building-blocks/secrets/secrets-overview/)|Acceda a secretos desde el código de la aplicación o haga referencia a valores seguros en los componentes de Dapr. 
+
+### Conceptos principales de Dapr
+
+El ejemplo siguiente está basado en una API de pub/sub se usa para ilustrar los conceptos básicos relacionados con Dapr en Azure Container Apps. 
+
+![](https://learn.microsoft.com/es-es/training/wwl-azure/implement-azure-container-apps/media/distributed-application-runtime-container-apps.png)
+
+|Etiqueta|Configuración de Dapr|Descripción|
+|--------|---------------------|-----------|
+|1|Container Apps con Dapr habilitado|Está habilitado en el nivel de aplicación de contenedor mediante la configuración de un conjunto de argumentos. Estos valores se aplican a todas las revisiones de una aplicación de contenedor determinada cuando se ejecutan en modo de varias revisiones.|
+|2|Dapr|Las API de Dapr totalmente administradas se exponen a cada aplicación de contenedor mediante un sidecar de Dapr. Las API de Dapr se pueden invocar desde la aplicación de contenedor mediante HTTP o gRPC. El sidecar de Dapr se ejecuta en el puerto HTTP 3500 y el puerto gRPC 50001.|
+|3|Configuración de componentes de Dapr|Usa un diseño modular en el que la funcionalidad se entrega como componente. Cada uno se pueden compartir entre varias aplicaciones de contenedor. Los identificadores de aplicación de Dapr proporcionados en la matriz de ámbitos dictan qué aplicaciones de contenedor habilitadas para Dapr cargan un componente determinado en tiempo de ejecución.|
+
+### Habilitación de Dapr
+
+Puede configurar Dapr mediante varios argumentos y notaciones basados en el contexto en tiempo de ejecución. Azure Container Apps proporciona tres canales para configurarlo:
+
++ CLI deContainer Apps.
++ PLantillas de infraestructura como código (IaC), como en las plantillas Bicep o Azure Resource Manager (ARM).
++ Azure Portal.
+
+### Componentes y ámbitos de Dapr
+
+Dapr usa un diseño modular en el que la funcionalidad se entrega como componente. El uso de compoenentes es opcional y está determinado exclusivamente por las necesidades de la aplicación.
+
+Los componentes de Dapr son recursos de nivel de entorno que hacen los siguiente:
+
++ Pueden proporcionar un modelo de abstracción enchufable para conectarse a servicios externos compatibles.
++ Se pueden compartir entre aplicaciones de contenedor o limitarse a aplicaciones de contenedor específicas.
++ Pueden usar secretos de Dapr para recuperar de ofrma segura los metadatos de configuración.
+
+Todas las aplicaciones de contenedor habilitadas para Dapr dentro del mismo entorno cargan el conjunto completo de componentes implementados. Se deben usar ámbitos de aplicación para asegurarse que los compoentes se cargan en tiempo de ejecución. 
