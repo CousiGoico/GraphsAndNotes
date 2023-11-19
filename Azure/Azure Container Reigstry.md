@@ -49,7 +49,7 @@ Características avanzadas de Azure Container Registry:
 
 > __INFO__ unas cifras altas de etiquetas y repositorios pueden afectar al rendimiento del registro.
 
-## Compilacon y adminisrtación de contenedores con tareas
+## Compilacon y administración de contenedores con tareas
 
 ACR Tasks es un conjunto de características, proporciona la creación de imágenes de contenedor para Linux, Windows y ARM, y puede automatizar la aplicación de revisiones de sistema operativo y marco para los contenedores de Docker. También permite compilaciones automatizadas activadas por actualizaciociones de código funte, atualizaciones de la imagne base de contenedor o temporaizadores. 
 
