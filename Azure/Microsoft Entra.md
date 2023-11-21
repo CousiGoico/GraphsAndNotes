@@ -21,3 +21,6 @@ Las entidades de servicio pueden ser de dos tipos:
 + Consentimiento del administrador: garantiza que los administradores dispone de algunos controles adicionales antes de autorizar a las aplicaciones o a los usuarios el acceso a datos con privilegios eleveados de la organización. 
 + Cosnentimiento de usuario individual: una aplicación puede solicitar los permisos que necesita mediante el parámetro de consulta del ámbito. El parámetro scope es una lista separada por espacios que incluye los permisos delegados que la app solicita. Cada permiso se indica anexando el valor del permiso al identificador del recurso. 
 
+## Graphics
+
+![](../Graphics/Images/MicrosoftEntra.png)
